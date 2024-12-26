@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- FontAwesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
+    
+    <style>
+        body {
+            background-color: #f7f7f7;
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 30px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        .page-title {
+            font-size: 36px;
+            font-weight: 600;
+            color: rgb(45, 73, 101);
+            text-align: center;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        .chat-box {
+            background-color: #f7f7f7;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            height: 500px;
+            overflow-y: auto;
+            margin-bottom: 25px;
+        }
+
+        .chat-box::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .chat-box::-webkit-scrollbar-thumb {
+            background-color: rgb(120, 129, 139);
+            border-radius: 5px;
+        }
+
+        .user-message,
+        .bot-message {
+            max-width: 80%;
+            margin-bottom: 20px;
+            padding: 16px;
+            border-radius: 16px;
+            font-size: 16px;
+            line-height: 1.6;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            background-color: #4CAF50;
+            color: #fff;
+            margin-left: auto;
+            box-shadow: 0 5px 15px rgba(168, 176, 185, 0.2);
+        }
+
+        .bot-message {
+            background-color: rgb(234, 242, 249);
+            color: #000;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .message-input-container {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-top: 1px solid #ddd;
+        }
+
+        .message-input-container input {
+            flex: 1;
+            padding: 12px 20px;
+            border-radius: 30px;
+            border: 2px solid #ddd;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .message-input-container input:focus {
+            border-color: #a8b0b9;
+        }
+
+        .message-input-container button {
+            background-color: rgb(62, 169, 96);
+            color: white;
+            border-radius: 50%;
+            padding: 12px;
+            margin-left: 15px;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .upload-section {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin-bottom: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .upload-section h4 {
+            color: #34495e;
+            font-weight: 600;
+            font-size: 20px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .upload-section input[type="file"] {
+            margin-bottom: 20px;
+            padding: 8px;
+            border-radius: 8px;
+        }
+
+        .status {
+            color: #2ecc71;
+            font-size: 16px;
+            margin-top: 15px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .chat-box {
+                height: 350px;
+            }
+
+            .message-input-container {
+                flex-direction: column;
+            }
+
+            .message-input-container input,
+            .message-input-container button {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="page-title">Chatbot</h1>
+
+        <div class="upload-section">
+            <h4>Upload Your PDF Files</h4>
+            <form id="uploadForm" enctype="multipart/form-data">
+                <input type="file" name="files" id="files" multiple accept=".pdf" class="form-control">
+                <button type="submit" class="btn btn-primary mt-2">Upload Files</button>
+            </form>
+            <div id="status" class="status"></div>
+        </div>
+
+        <div class="chat-box">
+            <div id="chat-container" class="d-flex flex-column"></div>
+        </div>
+
+        <div class="message-input-container">
+            <input type="text" id="user-input" class="form-control" placeholder="Ask me anything...">
+            <button id="send-button" class="btn"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            function sendMessage() {
+                const userInput = $('#user-input').val().trim();
+                if (userInput === "") return;
+
+                $('#chat-container').append(`<div class="user-message">${userInput}</div>`);
+                $('#user-input').val('');
+
+                const assistantMessageDiv = $('<div class="bot-message">Processing...</div>');
+                $('#chat-container').append(assistantMessageDiv);
+                $('#chat-container').scrollTop($('#chat-container')[0].scrollHeight);
+
+                const dataToSend = JSON.stringify({ user_input: userInput });
+
+                $.ajax({
+                    url: '/ask',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: dataToSend,
+                    success: function (data) {
+                        if (data.response) {
+                            assistantMessageDiv.html(data.response);
+                        } else {
+                            assistantMessageDiv.html('Sorry, no response available.');
+                        }
+                        $('#chat-container').scrollTop($('#chat-container')[0].scrollHeight);
+                    },
+                    error: function () {
+                        assistantMessageDiv.html('Sorry, I couldn\'t process that. Try again!');
+                    }
+                });
+            }
+
+            $('#send-button').click(function () {
+                sendMessage();
+            });
+
+            $('#user-input').keypress(function (e) {
+                if (e.which === 13) {
+                    sendMessage();
+                }
+            });
+
+            $('#uploadForm').submit(function (event) {
+                event.preventDefault();
+                const formData = new FormData();
+                const files = $('#files')[0].files;
+
+                for (let i = 0; i < files.length; i++) {
+                    formData.append('files', files[i]);
+                }
+
+                $('#status').text('Uploading...');
+
+                $.ajax({
+                    url: '/upload',
+                    method: 'POST',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: function (data) {
+                        $('#status').text('Files uploaded and indexed successfully!');
+                    },
+                    error: function () {
+                        $('#status').text('Error uploading files. Please try again.');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>
